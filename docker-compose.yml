@@ -1,0 +1,52 @@
+version: '3.8'
+ 
+services:
+  rabbitmq:
+    image: "rabbitmq:4.0.3-management"
+    ports:
+      - "5672:5672"   # RabbitMQ default port
+      - "15672:15672" # RabbitMQ management UI
+    networks:
+      - my-network
+ 
+  email-service:
+    build:
+      context: ./email-service
+    restart: always
+    container_name: email-service
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - rabbitmq
+    networks:
+      - my-network
+ 
+  order-service:
+    build:
+      context: ./order-service
+    restart: always
+    container_name: order-service
+    ports:
+      - "5000:5000"
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - rabbitmq
+    networks:
+      - my-network
+
+  order-processor:
+    build:
+      context: ./order-processor
+    restart: always
+    container_name: order-processor
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - rabbitmq
+    networks:
+      - my-network
+ 
+networks:
+  my-network:
+    driver: bridge
